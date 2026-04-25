@@ -1,0 +1,7 @@
+*.log
+nohup.out
+__pycache__/
+venv/
+.env
+backend/reports/
+storage/
