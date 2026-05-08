@@ -12,6 +12,34 @@ BACKEND = "http://localhost:8888"
 
 st.set_page_config(page_title="SBOM 核心控制台", page_icon="🛡️", layout="wide", initial_sidebar_state="expanded")
 
+# ── Auth Firewall ──────────────────────────────────────────────
+_CRED_USER = "moBS"
+_CRED_PASS = "dfahjeaiwf23878@#"
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+    st.markdown("""
+    <div style="display:flex; justify-content:center; align-items:center; min-height:60vh;">
+        <div style="text-align:center;">
+            <h1>🛡️ SBOM 核心控制台</h1>
+            <p style="color:#8B949E;">身份验证</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    with st.form("login_form"):
+        user = st.text_input("用户名")
+        pwd = st.text_input("密码", type="password")
+        submitted = st.form_submit_button("登录", use_container_width=True)
+        if submitted:
+            if user == _CRED_USER and pwd == _CRED_PASS:
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error("凭证无效，请重试。")
+    st.stop()
+
 st.markdown("""
 <style>
     .stApp { background-color: #0E1117; color: #C9D1D9; }
