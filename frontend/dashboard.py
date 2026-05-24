@@ -2,6 +2,7 @@ import base64
 import html
 import tempfile
 import time
+import textwrap
 from pathlib import Path
 
 import pandas as pd
@@ -39,6 +40,682 @@ def inject_styles() -> None:
     st.markdown(style, unsafe_allow_html=True)
 
 
+def inject_motion_styles() -> None:
+    st.markdown(
+        """
+        <style>
+            @keyframes vectorFlow {
+                0% { background-position: 0% 50%; }
+                100% { background-position: 140% 50%; }
+            }
+
+            @keyframes vectorBlink {
+                0% { opacity: 0.38; transform: scaleX(0.9); }
+                50% { opacity: 1; transform: scaleX(1); }
+                100% { opacity: 0.38; transform: scaleX(0.9); }
+            }
+
+            @keyframes meshDrift {
+                0% { stroke-dashoffset: 0; opacity: 0.4; }
+                50% { opacity: 0.7; }
+                100% { stroke-dashoffset: -32; opacity: 0.4; }
+            }
+
+            @keyframes meshPulse {
+                0% { opacity: 0.72; transform: scale(0.96); }
+                50% { opacity: 1; transform: scale(1.06); }
+                100% { opacity: 0.72; transform: scale(0.96); }
+            }
+
+            @keyframes trendFlow {
+                0% { background-position: 0 0; opacity: 0.72; }
+                50% { opacity: 1; }
+                100% { background-position: 180% 0; opacity: 0.72; }
+            }
+
+            @keyframes telemetryShift {
+                0% { background-position: 0 0; opacity: 0.46; }
+                50% { opacity: 0.92; }
+                100% { background-position: 160% 0; opacity: 0.46; }
+            }
+
+            .hero-asset-board {
+                position: relative;
+                min-height: 254px;
+                padding-top: 6.8rem;
+                z-index: 2;
+            }
+
+            .hero-asset-board::after {
+                content: "";
+                position: absolute;
+                left: 1rem;
+                right: 1rem;
+                bottom: 1.1rem;
+                height: 48px;
+                border-radius: 18px;
+                background: linear-gradient(90deg, rgba(88, 166, 255, 0.02), rgba(83, 215, 255, 0.14), rgba(242, 188, 98, 0.12), rgba(88, 166, 255, 0.02));
+                mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+                pointer-events: none;
+                opacity: 0.8;
+            }
+
+            .asset-mesh {
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                mask-image: radial-gradient(circle at 48% 42%, #000 0, #000 62%, transparent 100%);
+            }
+
+            .asset-mesh::before {
+                content: "";
+                position: absolute;
+                left: 72px;
+                top: 78px;
+                width: 220px;
+                height: 110px;
+                border-radius: 999px;
+                background: radial-gradient(circle, rgba(83, 215, 255, 0.18), rgba(242, 188, 98, 0.08) 52%, transparent 76%);
+                filter: blur(18px);
+                opacity: 0.8;
+            }
+
+            .mesh-link {
+                position: absolute;
+                height: 3px;
+                border-radius: 999px;
+                background: linear-gradient(90deg, rgba(88, 166, 255, 0.05), rgba(83, 215, 255, 0.72), rgba(242, 188, 98, 0.2), rgba(88, 166, 255, 0.04));
+                transform-origin: left center;
+                animation: meshDrift 9s linear infinite;
+                box-shadow: 0 0 18px rgba(83, 215, 255, 0.12);
+                opacity: 0.8;
+            }
+
+            .mesh-link--one {
+                left: 58px;
+                top: 74px;
+                width: 144px;
+                transform: rotate(18deg);
+            }
+
+            .mesh-link--two {
+                left: 168px;
+                top: 132px;
+                width: 126px;
+                transform: rotate(23deg);
+            }
+
+            .mesh-link--three {
+                left: 114px;
+                top: 170px;
+                width: 86px;
+                transform: rotate(-34deg);
+            }
+
+            .mesh-node {
+                position: absolute;
+                width: 14px;
+                height: 14px;
+                border-radius: 999px;
+                box-shadow: 0 0 22px rgba(88, 166, 255, 0.18);
+                animation: meshPulse 3.2s ease-in-out infinite;
+            }
+
+            .mesh-node::after {
+                content: "";
+                position: absolute;
+                inset: -9px;
+                border-radius: 999px;
+                border: 1px solid rgba(88, 166, 255, 0.16);
+                opacity: 0.5;
+            }
+
+            .mesh-node--asset {
+                background: radial-gradient(circle, rgba(131, 221, 255, 0.98), rgba(83, 215, 255, 0.42));
+            }
+
+            .mesh-node--risk {
+                width: 20px;
+                height: 20px;
+                background: radial-gradient(circle, rgba(242, 188, 98, 0.98), rgba(242, 188, 98, 0.5));
+                box-shadow: 0 0 26px rgba(242, 188, 98, 0.24);
+            }
+
+            .mesh-node--policy {
+                background: radial-gradient(circle, rgba(126, 231, 135, 0.98), rgba(126, 231, 135, 0.42));
+                box-shadow: 0 0 22px rgba(126, 231, 135, 0.22);
+            }
+
+            .mesh-node--one { left: 54px; top: 64px; }
+            .mesh-node--two { left: 138px; top: 176px; }
+            .mesh-node--three { left: 236px; top: 118px; }
+            .mesh-node--four { left: 298px; top: 180px; }
+
+            .metric-card__signal {
+                position: relative;
+            }
+
+            .metric-card--warm {
+                border-color: rgba(242, 188, 98, 0.18);
+                box-shadow: 0 24px 44px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(242, 188, 98, 0.05);
+            }
+
+            .trend-strip {
+                position: relative;
+                z-index: 2;
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 0.38rem;
+                margin-top: 0.72rem;
+            }
+
+            .trend-strip__lane {
+                display: block;
+                height: 8px;
+                border-radius: 999px;
+                background: linear-gradient(90deg, rgba(88, 166, 255, 0.06), rgba(83, 215, 255, 0.92), rgba(88, 166, 255, 0.14));
+                background-size: 180% 100%;
+                animation: trendFlow 3.4s linear infinite;
+            }
+
+            .trend-strip--warm .trend-strip__lane {
+                background: linear-gradient(90deg, rgba(242, 188, 98, 0.06), rgba(242, 188, 98, 0.88), rgba(248, 81, 73, 0.2));
+            }
+
+            .policy-gate--warm {
+                box-shadow: inset 0 0 0 1px rgba(242, 188, 98, 0.06), 0 0 26px rgba(242, 188, 98, 0.08);
+                background: linear-gradient(180deg, rgba(20, 20, 24, 0.94), rgba(9, 14, 22, 0.9));
+            }
+
+            .login-hero--signal::after {
+                content: "";
+                position: absolute;
+                inset: auto 18px 18px 18px;
+                height: 46px;
+                border-radius: 18px;
+                background: linear-gradient(90deg, rgba(88, 166, 255, 0.05), rgba(83, 215, 255, 0.16), rgba(242, 188, 98, 0.08));
+                mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+                pointer-events: none;
+            }
+
+            .report-sync-shell {
+                position: relative;
+            }
+
+            .report-sync-shell::before {
+                animation-duration: 6.6s;
+            }
+
+            .report-shell--active {
+                border-color: rgba(83, 215, 255, 0.14);
+                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(83, 215, 255, 0.04), 0 0 32px rgba(242, 188, 98, 0.05);
+            }
+
+            .hud-shell-corners span,
+            .panel-corners span {
+                width: 24px;
+                height: 24px;
+                opacity: 0.54;
+            }
+
+            .soft-corners span {
+                width: 18px;
+                height: 18px;
+                opacity: 0.38;
+                filter: blur(0.35px);
+            }
+
+            .soft-shell-muted .soft-corners span {
+                opacity: 0.22;
+                filter: blur(0.55px);
+            }
+
+            .soft-corners span::before,
+            .soft-corners span::after {
+                box-shadow: 0 0 14px rgba(83, 215, 255, 0.09);
+            }
+
+            .hud-shell-corners span::before,
+            .panel-corners span::before {
+                width: 18px;
+                height: 1px;
+            }
+
+            .soft-corners span::before {
+                width: 12px;
+                background: linear-gradient(90deg, rgba(83, 215, 255, 0.42), rgba(83, 215, 255, 0));
+            }
+
+            .hud-shell-corners span::after,
+            .panel-corners span::after {
+                width: 1px;
+                height: 18px;
+                background: linear-gradient(180deg, rgba(88, 166, 255, 0.6), rgba(88, 166, 255, 0));
+            }
+
+            .soft-corners span::after {
+                height: 12px;
+                background: linear-gradient(180deg, rgba(83, 215, 255, 0.42), rgba(83, 215, 255, 0));
+            }
+
+            .hero-side {
+                padding: 1.3rem 1.25rem 1.15rem;
+                border-radius: 28px;
+                background:
+                    radial-gradient(circle at 80% 18%, rgba(83, 215, 255, 0.12), transparent 26%),
+                    radial-gradient(circle at 24% 82%, rgba(242, 188, 98, 0.12), transparent 30%),
+                    linear-gradient(180deg, rgba(11, 19, 30, 0.98), rgba(6, 12, 20, 0.94));
+                border-color: rgba(88, 166, 255, 0.1);
+                box-shadow: 0 26px 54px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            }
+
+            .resource-ring {
+                opacity: 0.76;
+            }
+
+            .resource-ring::before {
+                width: 11.2rem;
+                height: 11.2rem;
+                top: -1.9rem;
+                right: -1.8rem;
+                opacity: 0.54;
+            }
+
+            .resource-ring::after {
+                content: "";
+                position: absolute;
+                right: 2.2rem;
+                top: 3.1rem;
+                width: 7.2rem;
+                height: 7.2rem;
+                border-radius: 999px;
+                background: radial-gradient(circle, rgba(242, 188, 98, 0.18), rgba(83, 215, 255, 0.08) 46%, transparent 74%);
+                filter: blur(18px);
+                opacity: 0.72;
+            }
+
+            .radar-sweep::before {
+                width: 248px;
+                height: 248px;
+                right: 6px;
+                top: 2px;
+                background: conic-gradient(from 226deg, rgba(88, 166, 255, 0), rgba(88, 166, 255, 0.02), rgba(83, 215, 255, 0.16), rgba(126, 231, 135, 0.18), rgba(242, 188, 98, 0.08), rgba(88, 166, 255, 0));
+                filter: blur(1.2px);
+                animation-duration: 7.4s;
+            }
+
+            .radar-sweep::after {
+                content: "";
+                position: absolute;
+                left: 2rem;
+                right: 2rem;
+                top: 8.8rem;
+                height: 1px;
+                background: linear-gradient(90deg, rgba(88, 166, 255, 0), rgba(83, 215, 255, 0.48), rgba(242, 188, 98, 0.42), rgba(88, 166, 255, 0));
+                opacity: 0.58;
+            }
+
+            .pulse-orbit {
+                right: 70px;
+                top: 84px;
+                width: 24px;
+                height: 24px;
+                background: rgba(83, 215, 255, 0.16);
+                border-color: rgba(83, 215, 255, 0.16);
+                box-shadow: 0 0 18px rgba(83, 215, 255, 0.16);
+            }
+
+            .target-lock {
+                inset: auto 16px 16px auto;
+                width: 42px;
+                height: 42px;
+                border-color: rgba(242, 188, 98, 0.16);
+                background: radial-gradient(circle, rgba(242, 188, 98, 0.16), rgba(248, 81, 73, 0.04) 54%, transparent 76%);
+            }
+
+            .target-lock.soft-lock {
+                box-shadow: 0 0 0 1px rgba(242, 188, 98, 0.04), 0 0 24px rgba(242, 188, 98, 0.08);
+                filter: saturate(0.88);
+            }
+
+            .target-lock::before,
+            .target-lock::after {
+                background: rgba(242, 188, 98, 0.62);
+            }
+
+            .target-lock::before {
+                width: 18px;
+                top: 20px;
+                left: 12px;
+            }
+
+            .target-lock::after {
+                height: 18px;
+                top: 12px;
+                left: 20px;
+            }
+
+            .target-lock.soft-lock::before {
+                width: 14px;
+                top: 20px;
+                left: 14px;
+                background: linear-gradient(90deg, rgba(242, 188, 98, 0.14), rgba(242, 188, 98, 0.58), rgba(242, 188, 98, 0.14));
+            }
+
+            .target-lock.soft-lock::after {
+                height: 14px;
+                top: 14px;
+                left: 20px;
+                background: linear-gradient(180deg, rgba(242, 188, 98, 0.14), rgba(242, 188, 98, 0.58), rgba(242, 188, 98, 0.14));
+            }
+
+            .side-label {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
+                padding: 0.38rem 0.78rem;
+                border-radius: 999px;
+                font-size: 0.76rem;
+                letter-spacing: 0.16em;
+                margin-bottom: 0.75rem;
+                background: linear-gradient(180deg, rgba(8, 15, 24, 0.72), rgba(10, 16, 26, 0.54));
+                border: 1px solid rgba(83, 215, 255, 0.12);
+                box-shadow: inset 0 0 0 1px rgba(83, 215, 255, 0.03);
+            }
+
+            .side-stat {
+                display: grid;
+                grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+                align-items: center;
+                gap: 0.9rem;
+                padding: 0.9rem 0.92rem;
+                margin-top: 0.52rem;
+                border-radius: 18px;
+                background: linear-gradient(180deg, rgba(8, 14, 22, 0.82), rgba(10, 16, 25, 0.72));
+                border: 1px solid rgba(88, 166, 255, 0.08);
+                box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.015);
+            }
+
+            .side-stat span {
+                color: var(--text-dim);
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                font-size: 0.72rem;
+            }
+
+            .side-stat strong {
+                line-height: 1.45;
+            }
+
+            .telemetry-band {
+                position: relative;
+                z-index: 2;
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 0.34rem;
+                margin: 0.2rem 0 0.95rem;
+                padding: 0.45rem 0.5rem;
+                border-radius: 16px;
+                background: rgba(7, 13, 21, 0.46);
+                border: 1px solid rgba(88, 166, 255, 0.08);
+            }
+
+            .telemetry-band__bar {
+                display: block;
+                height: 6px;
+                border-radius: 999px;
+                background: linear-gradient(90deg, rgba(88, 166, 255, 0.04), rgba(83, 215, 255, 0.88), rgba(88, 166, 255, 0.08));
+                background-size: 180% 100%;
+                animation: telemetryShift 4.4s linear infinite;
+                box-shadow: 0 0 12px rgba(83, 215, 255, 0.1);
+            }
+
+            .telemetry-band__bar:nth-child(2n) {
+                animation-delay: -1.1s;
+            }
+
+            .telemetry-band__bar:nth-child(3n) {
+                animation-delay: -2.2s;
+            }
+
+            .telemetry-band--warm .telemetry-band__bar {
+                background: linear-gradient(90deg, rgba(242, 188, 98, 0.05), rgba(242, 188, 98, 0.88), rgba(248, 81, 73, 0.14));
+                box-shadow: 0 0 14px rgba(242, 188, 98, 0.12);
+            }
+
+            .scan-vector-matrix {
+                margin: 0.85rem 0 0.72rem;
+                padding: 0.95rem 0.95rem 0.9rem;
+                border-radius: 20px;
+                background:
+                    linear-gradient(180deg, rgba(7, 12, 20, 0.92), rgba(9, 16, 24, 0.84)),
+                    radial-gradient(circle at top right, rgba(83, 215, 255, 0.06), transparent 24%);
+                border: 1px solid rgba(88, 166, 255, 0.16);
+                box-shadow:
+                    inset 0 0 0 1px rgba(88, 166, 255, 0.03),
+                    0 18px 34px rgba(1, 7, 13, 0.34);
+            }
+
+            .scan-vector-head {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0.8rem;
+                margin-bottom: 0.75rem;
+                font-size: 0.76rem;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--accent-cyan);
+            }
+
+            .scan-vector-head strong {
+                color: var(--text-main);
+                font-size: 0.72rem;
+                letter-spacing: 0.08em;
+            }
+
+            .scan-vector-grid {
+                display: grid;
+                gap: 0.65rem;
+            }
+
+            .scan-vector-card {
+                position: relative;
+                overflow: hidden;
+                padding: 0.82rem 0.88rem 0.85rem;
+                border-radius: 18px;
+                background:
+                    linear-gradient(180deg, rgba(10, 18, 28, 0.96), rgba(6, 11, 18, 0.88)),
+                    radial-gradient(circle at 85% 22%, rgba(242, 188, 98, 0.06), transparent 20%);
+                border: 1px solid rgba(88, 166, 255, 0.12);
+            }
+
+            .scan-vector-card::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(90deg, transparent, rgba(83, 215, 255, 0.08), transparent);
+                transform: translateX(-120%);
+                pointer-events: none;
+            }
+
+            .scan-vector-card--active::before {
+                animation: sweepGlow 2.8s linear infinite;
+            }
+
+            .scan-vector-card--done {
+                border-color: rgba(126, 231, 135, 0.2);
+                box-shadow: inset 0 0 0 1px rgba(126, 231, 135, 0.03);
+            }
+
+            .scan-vector-card--active {
+                border-color: rgba(83, 215, 255, 0.24);
+                box-shadow:
+                    inset 0 0 0 1px rgba(83, 215, 255, 0.05),
+                    0 0 26px rgba(83, 215, 255, 0.08);
+            }
+
+            .scan-vector-top {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 0.7rem;
+                margin-bottom: 0.48rem;
+            }
+
+            .scan-vector-title {
+                display: block;
+                color: var(--text-main);
+                font-size: 0.87rem;
+                font-weight: 700;
+                line-height: 1.25;
+            }
+
+            .scan-vector-copy {
+                display: block;
+                margin-top: 0.18rem;
+                color: var(--text-dim);
+                font-size: 0.75rem;
+                line-height: 1.45;
+            }
+
+            .scan-vector-state {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.32rem;
+                padding: 0.22rem 0.5rem;
+                border-radius: 999px;
+                background: rgba(88, 166, 255, 0.08);
+                border: 1px solid rgba(88, 166, 255, 0.12);
+                color: var(--accent-cyan);
+                font-size: 0.7rem;
+                white-space: nowrap;
+            }
+
+            .scan-vector-card--done .scan-vector-state {
+                color: var(--accent-green);
+                border-color: rgba(126, 231, 135, 0.18);
+                background: rgba(126, 231, 135, 0.08);
+            }
+
+            .scan-vector-card--pending .scan-vector-state {
+                color: var(--text-dim);
+                border-color: rgba(88, 166, 255, 0.08);
+                background: rgba(88, 166, 255, 0.04);
+            }
+
+            .scan-vector-bar {
+                position: relative;
+                height: 0.46rem;
+                border-radius: 999px;
+                overflow: hidden;
+                background: linear-gradient(90deg, rgba(88, 166, 255, 0.08), rgba(15, 24, 36, 0.86));
+                border: 1px solid rgba(88, 166, 255, 0.06);
+            }
+
+            .scan-vector-fill {
+                position: absolute;
+                inset: 0 auto 0 0;
+                border-radius: inherit;
+                background:
+                    linear-gradient(90deg, rgba(83, 215, 255, 0.56), rgba(88, 166, 255, 0.96), rgba(242, 188, 98, 0.76));
+                background-size: 200% 100%;
+                box-shadow: 0 0 18px rgba(83, 215, 255, 0.18);
+            }
+
+            .scan-vector-card--active .scan-vector-fill {
+                animation: vectorFlow 1.9s linear infinite;
+            }
+
+            .scan-vector-card--done .scan-vector-fill {
+                background: linear-gradient(90deg, rgba(126, 231, 135, 0.72), rgba(83, 215, 255, 0.8), rgba(242, 188, 98, 0.76));
+            }
+
+            .scan-vector-foot {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0.7rem;
+                margin-top: 0.4rem;
+                color: var(--text-dim);
+                font-size: 0.72rem;
+            }
+
+            .scan-vector-pulse {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.2rem;
+            }
+
+            .scan-vector-pulse span {
+                width: 0.22rem;
+                height: 0.22rem;
+                border-radius: 999px;
+                background: rgba(83, 215, 255, 0.72);
+                animation: vectorBlink 1.4s ease-in-out infinite;
+            }
+
+            .scan-vector-pulse span:nth-child(2) {
+                animation-delay: 0.18s;
+            }
+
+            .scan-vector-pulse span:nth-child(3) {
+                animation-delay: 0.36s;
+            }
+
+            .scan-vector-card--done .scan-vector-pulse span {
+                background: rgba(126, 231, 135, 0.76);
+            }
+
+            .scan-vector-card--pending .scan-vector-pulse span {
+                background: rgba(143, 165, 191, 0.4);
+            }
+
+            .scan-vector-card--failed {
+                border-color: rgba(248, 81, 73, 0.24);
+                box-shadow: inset 0 0 0 1px rgba(248, 81, 73, 0.04);
+            }
+
+            .scan-vector-card--failed .scan-vector-state {
+                color: var(--accent-red);
+                border-color: rgba(248, 81, 73, 0.2);
+                background: rgba(248, 81, 73, 0.08);
+            }
+
+            .scan-vector-card--failed .scan-vector-fill {
+                background: linear-gradient(90deg, rgba(248, 81, 73, 0.78), rgba(242, 188, 98, 0.72));
+                box-shadow: 0 0 18px rgba(248, 81, 73, 0.14);
+            }
+
+            .scan-vector-card--failed .scan-vector-pulse span {
+                background: rgba(248, 81, 73, 0.76);
+            }
+
+            .scan-vector-card--skipped {
+                border-color: rgba(242, 188, 98, 0.18);
+                box-shadow: inset 0 0 0 1px rgba(242, 188, 98, 0.03);
+            }
+
+            .scan-vector-card--skipped .scan-vector-state {
+                color: var(--accent-gold);
+                border-color: rgba(242, 188, 98, 0.18);
+                background: rgba(242, 188, 98, 0.08);
+            }
+
+            .scan-vector-card--skipped .scan-vector-fill {
+                background: linear-gradient(90deg, rgba(242, 188, 98, 0.72), rgba(88, 166, 255, 0.58));
+                box-shadow: 0 0 16px rgba(242, 188, 98, 0.12);
+            }
+
+            .scan-vector-card--skipped .scan-vector-pulse span {
+                background: rgba(242, 188, 98, 0.72);
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def hud_corners() -> str:
     return "<div class='hud-shell-corners soft-corners'><span class='corner-tl'></span><span class='corner-tr'></span><span class='corner-bl'></span><span class='corner-br'></span></div>"
 
@@ -52,17 +729,172 @@ def signal_rail(count: int = 4, tone: str = "") -> str:
     return f"<div class='signal-rail{tone_class}'>" + "".join("<span></span>" for _ in range(count)) + "</div>"
 
 
-def render_metric_card(label: str, value: str | int, detail: str, tone: str = "default") -> str:
-    tone_class = " metric-card--danger" if tone == "danger" else ""
+def hero_asset_mesh() -> str:
+    return """
+    <div class="hero-asset-board">
+        <div class="asset-mesh" aria-hidden="true">
+            <span class="mesh-link mesh-link--one"></span>
+            <span class="mesh-link mesh-link--two"></span>
+            <span class="mesh-link mesh-link--three"></span>
+            <span class="mesh-node mesh-node--asset mesh-node--one"></span>
+            <span class="mesh-node mesh-node--asset mesh-node--two"></span>
+            <span class="mesh-node mesh-node--risk mesh-node--three"></span>
+            <span class="mesh-node mesh-node--policy mesh-node--four"></span>
+        </div>
+    </div>
+    """
+
+
+def telemetry_band(tone: str = "cool") -> str:
+    warm_class = " telemetry-band--warm" if tone == "warm" else ""
     return (
-        f"<div class='metric-card{tone_class}'>"
+        f"<div class='telemetry-band{warm_class}' aria-hidden='true'>"
+        "<span class='telemetry-band__bar'></span>"
+        "<span class='telemetry-band__bar'></span>"
+        "<span class='telemetry-band__bar'></span>"
+        "<span class='telemetry-band__bar'></span>"
+        "</div>"
+    )
+
+
+SCAN_VECTOR_META = {
+    "SBOM": ("SBOM 资产提取", "解析依赖清单与组件资产拓扑"),
+    "SAST": ("SAST 源码审计", "扫描规则命中与高危代码路径"),
+    "CVE": ("CVE 风险匹配", "关联漏洞情报与版本暴露面"),
+    "REPORT": ("REPORT 汇总结论", "聚合门禁策略与最终报告"),
+}
+
+SCAN_STATE_LABELS = {
+    "pending": "待机",
+    "running": "扫描中",
+    "completed": "已完成",
+    "failed": "失败",
+    "skipped": "跳过",
+}
+
+SCAN_STATUS_TO_CLASS = {
+    "pending": "scan-vector-card scan-vector-card--pending",
+    "running": "scan-vector-card scan-vector-card--active",
+    "completed": "scan-vector-card scan-vector-card--done",
+    "failed": "scan-vector-card scan-vector-card--failed",
+    "skipped": "scan-vector-card scan-vector-card--skipped",
+}
+
+
+def idle_scan_job(target: str = "") -> dict:
+    stages = []
+    for key in ("SBOM", "SAST", "CVE", "REPORT"):
+        label, copy_text = SCAN_VECTOR_META[key]
+        stages.append(
+            {
+                "key": key,
+                "label": label,
+                "status": "pending",
+                "percent": 8,
+                "message": copy_text,
+            }
+        )
+
+    return {
+        "job_id": "",
+        "target": target,
+        "status": "idle",
+        "phase": "IDLE",
+        "percent": 0,
+        "message": "等待新的扫描任务。",
+        "logs": [f"REQ: {target}"] if target else ["SYSTEM: Ready for the next scan request."],
+        "stages": stages,
+    }
+
+
+def render_scan_job_log(logs: list[str]) -> str:
+    lines = logs[-8:] if logs else ["SYSTEM: Waiting for scan signal."]
+    html_log = "".join(
+        [
+            "<div><span style='color:#8FA5BF'>[{}]</span> {}</div>".format(
+                time.strftime("%H:%M:%S"),
+                html.escape(line),
+            )
+            for line in lines
+        ]
+    )
+    return f"<div class='terminal-window'>{html_log}</div>"
+
+
+def scan_vector_matrix(scan_job: dict | None = None) -> str:
+    scan_job = scan_job or idle_scan_job()
+    stages = scan_job.get("stages") or idle_scan_job().get("stages", [])
+    cards = []
+
+    for stage in stages:
+        key = stage.get("key", "UNKNOWN")
+        title, default_copy = SCAN_VECTOR_META.get(
+            key,
+            (stage.get("label", key), stage.get("message", "")),
+        )
+        status = stage.get("status", "pending")
+        state = SCAN_STATE_LABELS.get(status, "待机")
+        percent = int(stage.get("percent", 0))
+        copy_text = stage.get("message") or default_copy
+        card_class = SCAN_STATUS_TO_CLASS.get(status, "scan-vector-card scan-vector-card--pending")
+
+        cards.append(
+            textwrap.dedent(
+                f"""
+                <div class="{card_class}">
+                    <div class="scan-vector-top">
+                        <div>
+                            <span class="scan-vector-title">{html.escape(title)}</span>
+                            <span class="scan-vector-copy">{html.escape(copy_text)}</span>
+                        </div>
+                        <span class="scan-vector-state">{html.escape(state)}</span>
+                    </div>
+                    <div class="scan-vector-bar">
+                        <span class="scan-vector-fill" style="width: {percent}%"></span>
+                    </div>
+                    <div class="scan-vector-foot">
+                        <span>{html.escape(key)} · {percent}%</span>
+                        <span class="scan-vector-pulse"><span></span><span></span><span></span></span>
+                    </div>
+                </div>
+                """
+            ).strip()
+        )
+
+    phase_label = html.escape(str(scan_job.get("phase", "IDLE")))
+    phase_percent = int(scan_job.get("percent", 0))
+    return (
+        "<div class='scan-vector-matrix'>"
+        f"<div class='scan-vector-head'><span>SCAN VECTOR MATRIX</span><strong>{phase_label} {phase_percent}%</strong></div>"
+        "<div class='scan-vector-grid'>"
+        + "".join(cards)
+        + "</div></div>"
+    )
+
+
+def trend_strip(tone: str = "cool") -> str:
+    tone_class = " trend-strip--warm" if tone == "warm" else ""
+    return (
+        f"<div class='trend-strip{tone_class}'>"
+        "<span class='trend-strip__lane'></span>"
+        "<span class='trend-strip__lane'></span>"
+        "<span class='trend-strip__lane'></span>"
+        "</div>"
+    )
+
+
+def render_metric_card(label: str, value: str | int, detail: str, tone: str = "default") -> str:
+    tone_class = " metric-card--danger metric-card--warm" if tone == "danger" else ""
+    trend_tone = "warm" if tone == "danger" else "cool"
+    return (
+        f"<div class='metric-card metric-card__signal{tone_class}'>"
         f"{panel_corners()}"
         "<div class='target-lock soft-lock'></div><small>"
         f"{html.escape(label)}"
         "</small><div class='metric-value-row'><h3>"
         f"{html.escape(str(value))}"
-        "</h3><span class='metric-badge'>LIVE</span></div>"
-        f"{signal_rail(3)}"
+        "</h3><span class='metric-badge'>SYNC</span></div>"
+        f"{trend_strip(trend_tone)}"
         "<p class='metric-foot'>"
         f"{html.escape(detail)}"
         "</p></div>"
@@ -106,7 +938,7 @@ def render_login() -> None:
     with left:
         st.markdown(
             """
-            <div class="login-hero soft-shell">
+            <div class="login-hero login-hero--signal soft-shell">
                 <div class="hero-kicker"><span class="status-beacon"></span>SECURE ACCESS CONTROL</div>
                 <h1>🛡️ SBOM 核心控制台</h1>
                 <p>
@@ -139,6 +971,7 @@ def render_login() -> None:
 
 
 inject_styles()
+inject_motion_styles()
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -162,48 +995,39 @@ with st.sidebar:
         if scan_target:
             progress = st.empty()
             log_area = st.empty()
-            steps = ["INIT", "SBOM", "CVE", "SAST", "FIN"]
-            logs = [f"REQ: {scan_target}"]
-
-            for i, step in enumerate(steps[:-1]):
-                step_html = "  /  ".join(
-                    [
-                        "<span style='color:{}; font-weight:{}'>{}</span>".format(
-                            "#58A6FF" if j == i else "#556579",
-                            "700" if j == i else "500",
-                            s,
-                        )
-                        for j, s in enumerate(steps)
-                    ]
-                )
-                progress.markdown(
-                    f"<div class='phase-track'><strong>PHASE</strong> &nbsp; {step_html}</div>",
-                    unsafe_allow_html=True,
-                )
-                logs.append(f"EXEC: {step}")
-                html_log = "".join(
-                    [
-                        "<div><span style='color:#8FA5BF'>[{}]</span> {}</div>".format(
-                            time.strftime("%H:%M:%S"),
-                            html.escape(line),
-                        )
-                        for line in logs[-6:]
-                    ]
-                )
-                log_area.markdown(
-                    f"<div class='terminal-window'>{html_log}</div>",
-                    unsafe_allow_html=True,
-                )
-                time.sleep(0.3)
+            scan_job = idle_scan_job(scan_target)
+            progress.markdown(scan_vector_matrix(scan_job), unsafe_allow_html=True)
+            log_area.markdown(render_scan_job_log(scan_job.get("logs", [])), unsafe_allow_html=True)
 
             try:
-                response = api_post("/api/scan", {"path": scan_target})
-                if response.status_code == 200:
-                    st.success("扫描完成，面板正在刷新。")
-                    time.sleep(0.5)
-                    st.rerun()
-                else:
+                response = api_post("/api/scan-jobs", {"path": scan_target})
+                if response.status_code != 200:
                     st.error("ERR: {}".format(response.json().get("detail", response.text[:200])))
+                else:
+                    scan_job = response.json()
+                    while True:
+                        progress.markdown(scan_vector_matrix(scan_job), unsafe_allow_html=True)
+                        log_area.markdown(
+                            render_scan_job_log(scan_job.get("logs", [])),
+                            unsafe_allow_html=True,
+                        )
+
+                        if scan_job.get("status") == "completed":
+                            st.success("扫描完成，面板正在刷新。")
+                            time.sleep(0.5)
+                            st.rerun()
+
+                        if scan_job.get("status") == "failed":
+                            st.error("ERR: {}".format(scan_job.get("error") or scan_job.get("message", "Unknown error")))
+                            break
+
+                        time.sleep(0.65)
+                        job_id = scan_job.get("job_id")
+                        latest_job = api_get(f"/api/scan-jobs/{job_id}") if job_id else None
+                        if latest_job is None:
+                            st.error("ERR: 无法获取实时扫描状态。")
+                            break
+                        scan_job = latest_job
             except Exception as exc:  # pragma: no cover
                 st.error(str(exc))
 
@@ -217,7 +1041,8 @@ latest_target = latest_report.get("target", "等待新的扫描任务")
 latest_scan_time = latest_report.get("scanned_at", "暂无记录")
 
 st.markdown(
-    f"""
+    textwrap.dedent(
+        f"""
     <div class="command-center-shell command-center-shell--main report-shell--hud soft-shell soft-shell-muted">
         {hud_corners()}
         <div class="shell-grid">
@@ -226,7 +1051,6 @@ st.markdown(
                 <h1 class="hero-title">SBOM 核心控制台</h1>
                 <p class="hero-subtitle">
                     面向供应链扫描、漏洞聚合、源码安全告警与实验历史追踪的统一安全指挥台。
-                    保留现有深色主基调，同时增强实时监控、风险表达与控制台科技感。
                 </p>
                 <div class="hero-chip-row">
                     <span class="status-chip"><span class="status-beacon"></span>LIVE</span>
@@ -240,22 +1064,25 @@ st.markdown(
                     <div class="rack-cell">{panel_corners()}<small>REPORT CLOCK</small><strong>{html.escape(str(latest_scan_time))}</strong></div>
                 </div>
             </div>
-            <div class="hero-side soft-shell">
+            <div class="hero-side soft-shell report-shell--active report-sync-shell">
                 {panel_corners()}
                 <div class="radar-sweep"></div>
                 <div class="pulse-orbit"></div>
                 <div class="target-lock soft-lock"></div>
                 <div class="resource-ring"></div>
-                <div class="side-label">运行态概览</div>
-                <div class="side-stat"><span>最新目标</span><strong>{html.escape(str(latest_target))}</strong></div>
-                <div class="side-stat"><span>最近扫描</span><strong>{html.escape(str(latest_scan_time))}</strong></div>
-                <div class="side-stat"><span>报告总数</span><strong>{len(history)}</strong></div>
-                <div class="side-stat"><span>后端状态</span><strong>{html.escape(str(health_data.get("status", "unknown")).upper())}</strong></div>
-                {signal_rail(3, "warm-signal")}
+{hero_asset_mesh().strip()}
+{telemetry_band("warm")}
+<div class="side-label">运行态概览</div>
+<div class="side-stat"><span>最新目标</span><strong>{html.escape(str(latest_target))}</strong></div>
+<div class="side-stat"><span>最近扫描</span><strong>{html.escape(str(latest_scan_time))}</strong></div>
+<div class="side-stat"><span>报告总数</span><strong>{len(history)}</strong></div>
+<div class="side-stat"><span>后端状态</span><strong>{html.escape(str(health_data.get("status", "unknown")).upper())}</strong></div>
+{signal_rail(3, "warm-signal")}
             </div>
         </div>
     </div>
     """,
+    ).strip(),
     unsafe_allow_html=True,
 )
 
@@ -281,7 +1108,7 @@ if "selected_idx" not in st.session_state:
 
 st.markdown(
     f"""
-    <div class="report-shell report-shell--hud soft-shell soft-shell-muted">
+    <div class="report-shell report-shell--hud report-sync-shell soft-shell soft-shell-muted">
         {hud_corners()}
         <div class="shell-label">Report Switchboard</div>
         <h3 class="shell-title">全局报告切换</h3>
@@ -320,7 +1147,7 @@ sast_count = len(static_findings)
 
 st.markdown(
     f"""
-    <div class="report-shell command-center-shell report-shell--hud soft-shell soft-shell-muted">
+    <div class="report-shell command-center-shell report-shell--hud report-shell--active report-sync-shell soft-shell soft-shell-muted">
         {hud_corners()}
         <div class="shell-label">Selected Report</div>
         <h3 class="shell-title">{html.escape(chosen_id)}</h3>
@@ -373,7 +1200,7 @@ with tab_sbom:
     with col_r:
         status = policy.get("status", "UNKNOWN")
         color = "#7EE787" if status == "PASS" else "#F85149"
-        gate_class = "policy-gate policy-gate--pass" if status == "PASS" else "policy-gate policy-gate--fail"
+        gate_class = "policy-gate policy-gate--pass report-sync-shell" if status == "PASS" else "policy-gate policy-gate--fail policy-gate--warm report-sync-shell"
         reasons = policy.get("reasons", []) or ["未触发显式阻断原因。"]
         reasons_html = "".join([f"<div>• {html.escape(reason)}</div>" for reason in reasons])
         st.markdown(
